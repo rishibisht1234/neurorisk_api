@@ -1,28 +1,22 @@
+from agent.azure_llm import call_llm
+
 class NeuroRiskAgent:
 
     def explain(self, prediction: dict):
         risk = prediction["risk_score"]
         band = prediction["risk_band"]
 
-        response = {}
+        response = prediction.copy()
 
         # 1️⃣ Summary
         if risk < 0.3:
-            response["summary"] = (
-                "Low neurological risk indicators were detected."
-            )
+            response["summary"] = "Low neurological risk indicators were detected."
             response["tone"] = "reassuring"
-
         elif risk < 0.6:
-            response["summary"] = (
-                "Moderate neurological risk indicators were detected."
-            )
+            response["summary"] = "Moderate neurological risk indicators were detected."
             response["tone"] = "monitoring"
-
         else:
-            response["summary"] = (
-                "Elevated neurological risk indicators were detected."
-            )
+            response["summary"] = "Elevated neurological risk indicators were detected."
             response["tone"] = "cautionary"
 
         # 2️⃣ Interpretation
@@ -31,7 +25,7 @@ class NeuroRiskAgent:
             "and handwriting biomarkers."
         )
 
-        # 3️⃣ Next steps (VERY important)
+        # 3️⃣ Next steps
         if band == "Low Risk":
             response["recommended_next_steps"] = [
                 "No immediate action required",
@@ -48,10 +42,24 @@ class NeuroRiskAgent:
                 "Use this result as supportive information only"
             ]
 
-        # 4️⃣ Safety disclaimer
+        # 4️⃣ Disclaimer
         response["disclaimer"] = (
             "This is an AI-based early risk screening tool "
             "and not a medical diagnosis."
         )
 
-        return response
+        # ✅ SAFE LLM CALL
+        try:
+            llm_text = call_llm(response)
+            return {
+                "explanation": llm_text,
+                "source": "llm"
+            }
+
+        except Exception as e:
+            # 🔒 FAIL SAFE (VERY IMPORTANT FOR AZURE)
+            return {
+                "explanation": response["summary"],
+                "fallback_reason": str(e),
+                "source": "rule_based"
+            }
