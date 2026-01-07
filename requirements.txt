@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+
+numpy
+joblib
+scikit-learn==1.7.2
+
+shap
+matplotlib
+
+librosa
+soundfile
+
+opencv-python
+pillow
+
+python-multipart
